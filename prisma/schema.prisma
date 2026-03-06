@@ -10,9 +10,72 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Core models will be added in future tasks:
-// - User
-// - Listing
-// - Category
-// - Message
-// - etc.
+// ============================================
+// Enums
+// ============================================
+
+enum UserRole {
+  USER
+  SELLER
+  ADMIN
+  MODERATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+// ============================================
+// Core Models
+// ============================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // hashed password
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  role      UserRole @default(USER)
+  status    UserStatus @default(PENDING_VERIFICATION)
+  
+  // Profile fields
+  avatar    String?
+  phone     String?
+  bio       String?
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  refreshTokenSessions RefreshTokenSession[]
+  
+  @@index([email])
+  @@index([status])
+  @@index([role])
+  @@map("users")
+}
+
+model RefreshTokenSession {
+  id           String   @id @default(uuid())
+  tokenFamily  String   @map("token_family") // for rotation tracking
+  hashedToken  String   @map("hashed_token")   // hashed refresh token
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  revokedAt    DateTime? @map("revoked_at")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  
+  // Relations
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([tokenFamily])
+  @@index([hashedToken])
+  @@index([expiresAt])
+  @@map("refresh_token_sessions")
+}
