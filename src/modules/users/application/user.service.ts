@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { UserRepository } from '../infrastructure/user.repository';
 import type { User, CreateUserData, UpdateUserData, UserPublicProfile } from '../domain/user.types';
+import { hashPassword } from '../../../common/utils/password-hash';
 
 @Injectable()
 export class UserService {
@@ -15,14 +16,20 @@ export class UserService {
   }
 
   async create(data: CreateUserData): Promise<User> {
-    // TODO: Add password hashing before saving
-    // TODO: Add email normalization
-    // TODO: Check for existing user with same email
-    return this.userRepository.create(data);
+    const existingUser = await this.findByEmail(data.email);
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    const hashedPassword = await hashPassword(data.password);
+
+    return this.userRepository.create({
+      ...data,
+      password: hashedPassword,
+    });
   }
 
   async update(id: string, data: UpdateUserData): Promise<User> {
-    // TODO: Verify user exists
     return this.userRepository.update(id, data);
   }
 
@@ -40,9 +47,4 @@ export class UserService {
       createdAt,
     };
   }
-
-  // TODO: Implement additional business logic:
-  // - changePassword(userId: string, oldPassword: string, newPassword: string)
-  // - deactivateAccount(userId: string)
-  // - verifyEmail(userId: string)
 }
