@@ -3,6 +3,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtStrategy, type JwtPayload } from './jwt.strategy';
 import { UserService } from '../../users/application/user.service';
+import { UserRole } from '../../users/domain/user.types';
 import type { User, UserStatus } from '../../users/domain/user.types';
 
 describe('JwtStrategy', () => {
@@ -16,7 +17,7 @@ describe('JwtStrategy', () => {
     password: 'hashed_password',
     firstName: 'John',
     lastName: 'Doe',
-    role: 'USER' as const,
+    role: UserRole.BUYER,
     status: 'ACTIVE' as UserStatus,
     avatar: null,
     bio: null,
@@ -28,7 +29,7 @@ describe('JwtStrategy', () => {
   const mockPayload: JwtPayload = {
     sub: 'user-123',
     email: 'test@example.com',
-    role: 'USER',
+    role: 'BUYER',
     status: 'ACTIVE',
     iat: 1704067200,
     exp: 1704070800,
@@ -100,7 +101,7 @@ describe('JwtStrategy', () => {
       expect(result).toEqual({
         userId: 'user-123',
         email: 'test@example.com',
-        role: 'USER',
+        role: 'BUYER',
         status: 'ACTIVE',
       });
       expect(userService.findById).toHaveBeenCalledWith('user-123');

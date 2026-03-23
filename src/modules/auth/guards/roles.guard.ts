@@ -8,7 +8,7 @@ import type { AuthenticatedRequest } from '../constants/auth.constants';
 /**
  * Roles Authorization Guard
  *
- * TODO: Implement RBAC validation:
+ * Implements RBAC validation:
  * - Check if user has required roles
  * - Supports multiple roles (OR logic)
  * - Must be used after JwtAuthGuard
@@ -29,11 +29,6 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    // TODO: Implement role checking logic:
-    // 1. Extract user from request (set by JwtAuthGuard)
-    // 2. Check if user.role is in requiredRoles
-    // 3. Return true if authorized, throw ForbiddenException otherwise
-
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
 
@@ -41,7 +36,13 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('User not authenticated');
     }
 
-    // TODO: Check user role against requiredRoles
-    throw new ForbiddenException('Role-based access control not yet implemented');
+    // Check user role against requiredRoles
+    const hasRole = requiredRoles.some((role) => user.role === role);
+
+    if (!hasRole) {
+      throw new ForbiddenException('Insufficient permissions');
+    }
+
+    return true;
   }
 }

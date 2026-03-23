@@ -53,7 +53,7 @@ export class AuthService {
         password,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        role: 'USER' as UserRole,
+        role: 'BUYER' as UserRole,
       });
 
       this.logger.log(`User registered successfully: ${user.id}`);
@@ -78,22 +78,6 @@ export class AuthService {
       this.logger.error(`Registration failed for ${normalizedEmail}: ${(error as Error).message}`);
       throw error;
     }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async login(
-    _email: string,
-    _password: string,
-    _ipAddress?: string,
-    _userAgent?: string,
-  ): Promise<TokenPair> {
-    // TODO: Implement login:
-    // 1. Find user by email
-    // 2. Verify password
-    // 3. Check user status
-    // 4. Generate token pair
-    // 5. Create refresh token session
-    throw new Error('Not implemented');
   }
 
   async loginUser(data: LoginData): Promise<LoginResponseDto> {

@@ -8,7 +8,7 @@ export const ROLES_KEY = 'roles';
  * To be used with RolesGuard.
  *
  * @example
- * @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+ * @Roles(UserRole.ADMIN, UserRole.SELLER)
  * @Get('admin-only')
  */
 export const Roles = (...roles: UserRole[]) => SetMetadata(ROLES_KEY, roles);
