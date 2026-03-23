@@ -25,7 +25,7 @@ describe('AuthService', () => {
     email: 'test@example.com',
     firstName: 'John',
     lastName: 'Doe',
-    role: 'USER' as UserRole,
+    role: 'BUYER' as UserRole,
     status: 'ACTIVE' as UserStatus,
     password: 'hashed_password_123',
     avatar: null,
@@ -107,7 +107,7 @@ describe('AuthService', () => {
         password: 'Password123!',
         firstName: 'John',
         lastName: 'Doe',
-        role: 'USER',
+        role: 'BUYER',
       });
 
       expect(result).toEqual({
@@ -116,7 +116,7 @@ describe('AuthService', () => {
         firstName: 'John',
         lastName: 'Doe',
         displayName: 'JohnD',
-        role: 'USER',
+        role: 'BUYER',
         status: 'PENDING_VERIFICATION',
         createdAt: mockUser.createdAt,
         avatar: null,
@@ -198,14 +198,14 @@ describe('AuthService', () => {
       expect(userService.create).toHaveBeenCalled();
     });
 
-    it('should assign USER role by default', async () => {
+    it('should assign BUYER role by default', async () => {
       userService.create.mockResolvedValue(mockUser);
 
       await service.register(validRegisterData);
 
       expect(userService.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          role: 'USER',
+          role: 'BUYER',
         }),
       );
     });

@@ -14,18 +14,53 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const status =
       exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
-      exception instanceof HttpException ? exception.getResponse() : 'Internal server error';
+    // Handle validation errors properly
+    let clientMessage: string;
+    if (exception instanceof HttpException) {
+      const response = exception.getResponse();
+      if (typeof response === 'string') {
+        clientMessage = response;
+      } else if (typeof response === 'object' && response !== null) {
+        // Handle validation errors from ValidationPipe
+        if ('message' in response && Array.isArray(response.message)) {
+          clientMessage = response.message.join(', ');
+        } else if ('message' in response && typeof response.message === 'string') {
+          clientMessage = response.message;
+        } else {
+          clientMessage = 'Validation failed';
+        }
+      } else {
+        clientMessage = 'Bad Request';
+      }
+    } else {
+      clientMessage = 'Internal server error';
+    }
 
     // Log the error with context
+    let logMessage: string;
+    if (exception instanceof HttpException) {
+      const response = exception.getResponse();
+      if (typeof response === 'string') {
+        logMessage = response;
+      } else if (typeof response === 'object' && response !== null) {
+        // Handle validation errors from ValidationPipe
+        if ('message' in response && Array.isArray(response.message)) {
+          logMessage = `Validation failed: ${response.message.join(', ')}`;
+        } else if ('message' in response && typeof response.message === 'string') {
+          logMessage = response.message;
+        } else {
+          logMessage = `HTTP Exception: ${status}`;
+        }
+      } else {
+        logMessage = `HTTP Exception: ${status}`;
+      }
+    } else {
+      logMessage = exception instanceof Error ? exception.message : 'Unknown error';
+    }
+
     this.logger.error(
-      {
-        statusCode: status,
-        path: request.url,
-        method: request.method,
-        message: exception instanceof Error ? exception.message : 'Unknown error',
-        stack: exception instanceof Error ? exception.stack : undefined,
-      },
+      `HTTP Exception: ${status} ${request.method} ${request.url} - ${logMessage}`,
+      exception instanceof Error ? exception.stack : undefined,
       'Exception caught',
     );
 
@@ -38,7 +73,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message:
         isProduction && status === HttpStatus.INTERNAL_SERVER_ERROR
           ? 'Internal server error'
-          : message,
+          : clientMessage,
     };
 
     response.status(status).json(responseBody);

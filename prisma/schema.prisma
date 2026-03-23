@@ -15,10 +15,9 @@ datasource db {
 // ============================================
 
 enum UserRole {
-  USER
+  BUYER
   SELLER
   ADMIN
-  MODERATOR
 }
 
 enum UserStatus {
@@ -26,6 +25,27 @@ enum UserStatus {
   INACTIVE
   SUSPENDED
   PENDING_VERIFICATION
+}
+
+enum ListingCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+enum ListingStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  SOLD
+  BLOCKED
+}
+
+enum Currency {
+  USD
+  UAH
 }
 
 // ============================================
@@ -38,7 +58,7 @@ model User {
   password  String   // hashed password
   firstName String   @map("first_name")
   lastName  String   @map("last_name")
-  role      UserRole @default(USER)
+  role      UserRole @default(BUYER)
   status    UserStatus @default(PENDING_VERIFICATION)
   
   // Profile fields
@@ -52,6 +72,7 @@ model User {
   
   // Relations
   refreshTokenSessions RefreshTokenSession[]
+  listings Listing[]
   
   @@index([email])
   @@index([status])
@@ -78,4 +99,56 @@ model RefreshTokenSession {
   @@index([hashedToken])
   @@index([expiresAt])
   @@map("refresh_token_sessions")
+}
+
+// ============================================
+// Category Model
+// ============================================
+
+model Category {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  listings Listing[]
+  
+  @@index([slug])
+  @@map("categories")
+}
+
+// ============================================
+// Listing Model
+// ============================================
+
+model Listing {
+  id          String          @id @default(uuid())
+  sellerId    String          @map("seller_id")
+  categoryId  String          @map("category_id")
+  title       String
+  description String
+  price       Int             // stored in cents
+  currency    Currency
+  condition   ListingCondition
+  city        String?
+  attributes  Json            // flexible attributes for category-specific fields
+  status      ListingStatus   @default(DRAFT)
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  seller   User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+  
+  // Indexes for performance
+  @@index([status, createdAt])
+  @@index([categoryId, status])
+  @@index([price])
+  @@index([sellerId, status])
+  @@map("listings")
 }

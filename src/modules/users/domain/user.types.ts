@@ -1,8 +1,7 @@
 export enum UserRole {
-  USER = 'USER',
+  BUYER = 'BUYER',
   SELLER = 'SELLER',
   ADMIN = 'ADMIN',
-  MODERATOR = 'MODERATOR',
 }
 
 export enum UserStatus {
