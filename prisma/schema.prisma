@@ -43,6 +43,14 @@ enum ListingStatus {
   BLOCKED
 }
 
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  CANCELED
+  FAILED
+  EXPIRED
+}
+
 enum Currency {
   USD
   UAH
@@ -73,6 +81,7 @@ model User {
   // Relations
   refreshTokenSessions RefreshTokenSession[]
   listings Listing[]
+  orders Order[]
   
   @@index([email])
   @@index([status])
@@ -144,6 +153,7 @@ model Listing {
   // Relations
   seller   User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   category Category @relation(fields: [categoryId], references: [id])
+  orders Order[]
   
   // Indexes for performance
   @@index([status, createdAt])
@@ -151,4 +161,58 @@ model Listing {
   @@index([price])
   @@index([sellerId, status])
   @@map("listings")
+}
+
+// ============================================
+// Order Model (for Stripe Checkout)
+// ============================================
+
+model Order {
+  id          String      @id @default(uuid())
+  buyerId     String      @map("buyer_id")
+  listingId   String      @map("listing_id")
+  amount      Int         // stored in cents (matches Listing price format)
+  currency    Currency
+  status      OrderStatus @default(PENDING_PAYMENT)
+
+  // Stripe fields
+  stripeCheckoutSessionId String  @unique @map("stripe_checkout_session_id")
+  stripePaymentIntentId String? @map("stripe_payment_intent_id")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  buyer   User    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  paymentEvents PaymentEvent[]
+
+  // Indexes
+  @@index([buyerId, status])
+  @@index([listingId])
+  @@index([stripeCheckoutSessionId])
+  @@index([status, createdAt])
+  @@map("orders")
+}
+
+// ============================================
+// PaymentEvent Model (for webhook idempotency)
+// ============================================
+
+model PaymentEvent {
+  id            String   @id @default(uuid())
+  stripeEventId String   @unique @map("stripe_event_id")
+  type          String   // e.g., "checkout.session.completed"
+  processedAt   DateTime @default(now()) @map("processed_at")
+  orderId       String?  @map("order_id")
+
+  // Relations
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  // Indexes
+  @@index([stripeEventId])
+  @@index([type])
+  @@index([processedAt])
+  @@map("payment_events")
 }

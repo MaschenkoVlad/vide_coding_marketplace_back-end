@@ -8,6 +8,11 @@ const {
   JWT_SECRET,
   JWT_ACCESS_EXPIRES_IN,
   JWT_REFRESH_EXPIRES_IN,
+  STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET,
+  FRONTEND_URL,
+  STRIPE_CHECKOUT_SUCCESS_PATH,
+  STRIPE_CHECKOUT_CANCEL_PATH,
 } = process.env;
 
 export const configuration = () => ({
@@ -28,6 +33,13 @@ export const configuration = () => ({
     secret: JWT_SECRET || 'change-me-in-production-use-strong-random-string',
     accessExpiresIn: JWT_ACCESS_EXPIRES_IN || '1h',
     refreshExpiresIn: JWT_REFRESH_EXPIRES_IN || '7d',
+  },
+  stripe: {
+    secretKey: STRIPE_SECRET_KEY || '',
+    webhookSecret: STRIPE_WEBHOOK_SECRET || '',
+    frontendUrl: FRONTEND_URL || 'http://localhost:3000',
+    successPath: STRIPE_CHECKOUT_SUCCESS_PATH || '/checkout/success',
+    cancelPath: STRIPE_CHECKOUT_CANCEL_PATH || '/checkout/cancel',
   },
 });
 

@@ -159,13 +159,99 @@ src/
 
 ## Environment Variables
 
-| Variable       | Description                  | Default                  |
-| -------------- | ---------------------------- | ------------------------ |
-| `PORT`         | API server port              | `4000`                   |
-| `DATABASE_URL` | PostgreSQL connection string | See `.env.example`       |
-| `REDIS_URL`    | Redis connection string      | `redis://localhost:6379` |
-| `CORS_ORIGIN`  | Allowed CORS origins         | `http://localhost:3000`  |
-| `NODE_ENV`     | Environment mode             | `development`            |
+| Variable                 | Description                  | Default                  |
+| ------------------------ | ---------------------------- | ------------------------ |
+| `PORT`                   | API server port              | `4000`                   |
+| `DATABASE_URL`           | PostgreSQL connection string | See `.env.example`       |
+| `REDIS_URL`              | Redis connection string      | `redis://localhost:6379` |
+| `CORS_ORIGIN`            | Allowed CORS origins         | `http://localhost:3000`  |
+| `NODE_ENV`               | Environment mode             | `development`            |
+| `JWT_REFRESH_EXPIRES_IN` | JWT refresh token expiry     | `7d`                     |
+
+### Stripe Integration
+
+| Variable                       | Description                    | Default                 |
+| ------------------------------ | ------------------------------ | ----------------------- |
+| `STRIPE_SECRET_KEY`            | Stripe API secret key          | Required for payments   |
+| `STRIPE_WEBHOOK_SECRET`        | Stripe webhook endpoint secret | Required for webhooks   |
+| `FRONTEND_URL`                 | Frontend URL for redirects     | `http://localhost:3000` |
+| `STRIPE_CHECKOUT_SUCCESS_PATH` | Success redirect path          | `/checkout/success`     |
+| `STRIPE_CHECKOUT_CANCEL_PATH`  | Cancel redirect path           | `/checkout/cancel`      |
+
+## Testing Webhooks Locally
+
+To test Stripe webhooks locally, use the Stripe CLI:
+
+### 1. Install Stripe CLI
+
+```bash
+# macOS with Homebrew
+brew install stripe/stripe-cli/stripe
+
+# Or download from https://github.com/stripe/stripe-cli/releases
+```
+
+### 2. Login to Stripe
+
+```bash
+stripe login
+```
+
+### 3. Forward Webhooks to Local Server
+
+```bash
+# Forward all webhook events to your local endpoint
+stripe listen --forward-to http://localhost:4000/api/webhooks/stripe
+
+# This will output a webhook signing secret (whsec_...)
+# Copy this and add to your .env as STRIPE_WEBHOOK_SECRET
+```
+
+### 4. Trigger Test Events
+
+```bash
+# Trigger a checkout.session.completed event
+stripe trigger checkout.session.completed
+
+# Trigger a checkout.session.expired event
+stripe trigger checkout.session.expired
+```
+
+### Alternative: Manual Testing
+
+You can also test using curl with a test event payload:
+
+```bash
+curl -X POST http://localhost:4000/api/webhooks/stripe \
+  -H "Content-Type: application/json" \
+  -H "Stripe-Signature: test_signature" \
+  -d '{"type":"checkout.session.completed","data":{"object":{"id":"cs_test_..."}}}'
+```
+
+## Checkout Flow
+
+### Creating a Checkout Session
+
+```bash
+curl -X POST http://localhost:4000/api/checkout/session \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{"listingId":"uuid-of-listing"}'
+```
+
+Expected response:
+
+```json
+{
+  "checkoutUrl": "https://checkout.stripe.com/pay/cs_test_...",
+  "orderId": "uuid-of-order"
+}
+```
+
+### Webhook Events Handled
+
+- `checkout.session.completed` - Marks order as PAID, marks listing as SOLD
+- `checkout.session.expired` - Marks order as EXPIRED
 
 ## CI/CD
 
